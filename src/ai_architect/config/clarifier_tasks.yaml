@@ -1,0 +1,58 @@
+clarify_idea:
+  description: >
+    A user has submitted this product idea:
+
+    "{product_idea}"
+
+    Your job is to decide whether this idea has enough detail to proceed
+    directly to architecture generation, or whether critical information
+    is missing that would significantly change the design.
+
+    An idea is CLEAR ENOUGH if it specifies:
+    - What the product does (core function)
+    - Who uses it (target users)
+    - Rough scale or context (personal tool vs enterprise vs consumer app)
+
+    An idea NEEDS CLARIFICATION if any of these are ambiguous in a way
+    that would produce a fundamentally different architecture:
+    - Scale is completely unknown (1 user vs 10 million changes everything)
+    - Target platform is unspecified (mobile-only vs web changes the stack)
+    - Critical constraints are missing (compliance, real-time, offline needs)
+    - Business model changes the data model (B2B multi-tenant vs B2C)
+
+    If the idea is clear enough: output needs_clarification = false, questions = []
+    If it needs clarification: output needs_clarification = true, and produce
+    3 to 5 sharp, specific questions.
+
+    Each question must:
+    - Have a short label (3-5 words, used as a form field label in the UI)
+    - Have a full question sentence
+    - Have 2-4 suggested options the user can pick from (or type their own)
+    - Include a "hint" — one sentence explaining WHY this question matters
+      for the architecture
+
+    Output valid JSON only. No preamble, no markdown fences, no commentary.
+
+  expected_output: >
+    Valid JSON matching this exact schema:
+    {
+      "needs_clarification": true,
+      "questions": [
+        {
+          "id": "scale",
+          "label": "Expected scale",
+          "question": "How many users do you expect at launch and in year 1?",
+          "hint": "This determines whether we need horizontal scaling, caching layers, and CDN from day one.",
+          "options": ["< 100 (personal/internal)", "100–10k (startup)", "10k–1M (growth)", "1M+ (hyperscale)"],
+          "allow_custom": true
+        }
+      ]
+    }
+
+    If no clarification is needed:
+    {
+      "needs_clarification": false,
+      "questions": []
+    }
+
+  agent: clarifier
