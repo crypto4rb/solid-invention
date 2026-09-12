@@ -1,0 +1,479 @@
+analyze_requirements:
+  description: >
+    Analyze the user's product idea and their answers to clarifying questions.
+
+    Product idea: "{product_idea}"
+
+    Clarification Q&A:
+    {clarification_context}
+
+    Use the answers above to ground your analysis. If the user specified a
+    tech preference, reflect it. If they said "small team, 6-month runway",
+    scope accordingly and say so explicitly. If they said "1M+ users", flag
+    the scaling implications in every section.
+
+    Produce a structured markdown document with these exact sections:
+
+    # Requirements — [Product Name]
+
+    ## Product Summary
+    One paragraph. What it does, who it's for, and what makes it different.
+
+    ## User Types & Roles
+    List every user role with a one-line description of what they do in the system.
+
+    ## Core Features (MVP)
+    Numbered list. Each feature gets: name, 1-sentence description, and any
+    key constraints (e.g. "real-time", "offline-capable", "requires payment").
+
+    ## Optional Features (Post-MVP)
+    Numbered list. Same format. Explain briefly why each is post-MVP.
+
+    ## Technical Challenges
+    Bullet list of the hardest engineering problems this product must solve.
+    Be specific — not "scalability" but "fan-out writes to 50k followers on post".
+
+    ## Scalability Concerns
+    State the expected scale (users, requests/sec, data volume) based on
+    clarification answers, and identify the top 3 bottlenecks to design around.
+
+    ## Non-Functional Requirements
+    Cover: performance targets, uptime SLA, compliance/regulatory needs,
+    security requirements, accessibility, and internationalisation if relevant.
+
+    ## Recommended MVP Scope
+    A clear boundary: what is IN the MVP and what is explicitly OUT.
+    Include estimated MVP timeline in weeks given the team size mentioned.
+
+    OUTPUT RULES — follow exactly:
+    - Output raw markdown only. No preamble, no "Thought:", no explanation.
+    - Do NOT wrap output in a ```markdown code fence.
+    - Start directly with "# Requirements —" heading.
+    - Use ## for sections, ### for sub-sections, bullet/numbered lists for items.
+    - Every section must have substantive content — no empty or one-word sections.
+
+  expected_output: >
+    A markdown document starting with "# Requirements —" containing all eight
+    sections with ## headers and specific, actionable content throughout.
+    No ```markdown wrapper. No "Thought:" prefix. Raw markdown only.
+
+  output_file: "{output_dir}/requirements.md"
+  agent: requirements_analyst
+
+design_backend:
+  description: >
+    Design the backend architecture for this product based on the requirements
+    document produced by the requirements analyst.
+
+    Read the requirements carefully — let scale, user roles, and technical
+    challenges drive every decision. Do not produce a generic backend template.
+
+    Produce a structured markdown document with these exact sections:
+
+    # Backend Architecture — [Product Name]
+
+    ## Framework & Language
+    State the choice and justify it against the product's scale, team size,
+    and performance needs in 2-3 sentences.
+
+    ## API Architecture
+    REST vs GraphQL vs gRPC — state the choice, explain why, and list the
+    top 5-8 API endpoints with their method, path, and purpose.
+
+    ## Database Design
+    Primary database choice with justification. Include any secondary stores
+    (cache, search index, object storage) and explain each one's role.
+
+    ## Authentication & Authorisation
+    Auth strategy (JWT, session, OAuth) with justification. Cover token
+    lifecycle, refresh strategy, and role-based access control if needed.
+
+    ## Caching Strategy
+    What gets cached, where (in-process, Redis, CDN), and cache invalidation
+    approach. Be specific to this product's read/write patterns.
+
+    ## Background Jobs & Async Processing
+    List the async tasks this product needs (emails, webhooks, scheduled jobs,
+    heavy computation) and the queue/worker strategy.
+
+    ## Scalability Plan
+    How the backend scales from MVP to 10x load. Include horizontal scaling
+    approach, stateless design decisions, and any sharding strategy.
+
+    ## Third-Party Integrations
+    List every external service (payments, email, SMS, maps, AI APIs, etc.)
+    with the chosen provider and a one-line justification.
+
+    ## Security Considerations
+    Cover: input validation, rate limiting, secrets management, OWASP top risks
+    relevant to this product, and any compliance requirements.
+
+    OUTPUT RULES — follow exactly:
+    - Output raw markdown only. No preamble, no "Thought:", no explanation.
+    - Do NOT wrap output in a ```markdown code fence.
+    - Start directly with "# Backend Architecture —" heading.
+    - Use ## for sections, **bold** for technology names, tables where useful.
+    - Every section must have substantive, product-specific content.
+
+  expected_output: >
+    A markdown document starting with "# Backend Architecture —" containing
+    all nine sections with ## headers and justified, product-specific choices.
+    No ```markdown wrapper. No "Thought:" prefix. Raw markdown only.
+
+  output_file: "{output_dir}/backend_architecture.md"
+  agent: backend_architect
+  context:
+    - analyze_requirements
+
+design_frontend:
+  description: >
+    Design the frontend architecture based on the requirements and backend design.
+
+    Read the backend architecture carefully — your API communication layer must
+    match what the backend actually exposes. Your framework choice must match
+    the product type (mobile-first, SEO-heavy, internal tool, etc.).
+
+    Produce a structured markdown document with these exact sections:
+
+    # Frontend Architecture — [Product Name]
+
+    ## Framework & Platform Choice
+    State the framework (Next.js, React Native, plain React, Vue, etc.) and
+    justify it against the product type, target platform, and team size.
+
+    ## State Management
+    State the approach (Zustand, Redux Toolkit, React Query, Context, etc.)
+    and justify it. Explain what global state exists vs server state vs local.
+
+    ## Routing Strategy
+    Route structure with key routes listed. Cover protected routes, redirect
+    logic, and deep linking if relevant.
+
+    ## API Communication Layer
+    HTTP client choice, base URL config, auth header injection, error handling
+    strategy, and loading/error state patterns.
+
+    ## Authentication Flow
+    Step-by-step: login → token storage → route protection → token refresh →
+    logout. Be explicit about where tokens live (cookie vs localStorage) and why.
+
+    ## Key Pages & Components
+    List every major screen/page with its purpose and the 2-3 key components
+    it contains. Cover the component hierarchy for the most complex screen.
+
+    ## Performance Strategy
+    Code splitting approach, lazy loading, image optimisation, bundle size
+    targets, and any SSR/SSG decisions for Next.js projects.
+
+    ## Build, Testing & Deployment
+    Build tool, test framework, CI pipeline steps, and deployment target
+    (Vercel, Netlify, S3+CDN, app stores).
+
+    OUTPUT RULES — follow exactly:
+    - Output raw markdown only. No preamble, no "Thought:", no explanation.
+    - Do NOT wrap output in a ```markdown code fence.
+    - Start directly with "# Frontend Architecture —" heading.
+    - Use ## for sections, **bold** for technology names, bullet lists for routes/components.
+
+  expected_output: >
+    A markdown document starting with "# Frontend Architecture —" containing
+    all eight sections with ## headers and product-specific justified choices.
+    No ```markdown wrapper. No "Thought:" prefix. Raw markdown only.
+
+  output_file: "{output_dir}/frontend_architecture.md"
+  agent: frontend_architect
+  context:
+    - analyze_requirements
+    - design_backend
+
+design_system:
+  description: >
+    Produce a complete infrastructure and system design for this product.
+
+    Base every decision on the actual scale, team size, and budget constraints
+    from the requirements. Do not recommend Kubernetes for a 200-user MVP.
+    Do not recommend a single server for a 500k-user SaaS.
+
+    Produce a structured markdown document with these exact sections:
+
+    # System Design — [Product Name]
+
+    ## Infrastructure Overview
+    Cloud provider choice with justification. Overall deployment model
+    (serverless, containers, VMs, managed PaaS).
+
+    ## Deployment Architecture
+    Step-by-step: how code gets from repo to production. List every runtime
+    environment (dev, staging, prod) and what differs between them.
+
+    ## Container & Orchestration Strategy
+    Docker/container setup. Orchestration choice (ECS, Cloud Run, k8s, none)
+    with justification tied to team size and scale.
+
+    ## Inter-Service Communication
+    How services talk to each other: synchronous (REST, gRPC) vs asynchronous
+    (queues, pub/sub). Include the message broker if used.
+
+    ## Observability Stack
+    Logging (structured logs → where), metrics (what tool, what dashboards),
+    tracing (if needed), and alerting strategy.
+
+    ## Security & Network Topology
+    VPC/network design, firewall rules, secrets management, TLS termination,
+    and any WAF/DDoS protection.
+
+    ## Disaster Recovery & Backup
+    RTO and RPO targets. Backup strategy for databases and object storage.
+    Failover approach.
+
+    ## Estimated Infrastructure Cost
+    Monthly cost breakdown at MVP scale. Use realistic numbers for the chosen
+    cloud services. Flag the top 2-3 cost drivers.
+
+    OUTPUT RULES — follow exactly:
+    - Output raw markdown only. No preamble, no "Thought:", no explanation.
+    - Do NOT wrap output in a ```markdown code fence.
+    - Start directly with "# System Design —" heading.
+    - Use ## for sections, tables for cost breakdown, **bold** for service names.
+
+  expected_output: >
+    A markdown document starting with "# System Design —" containing all eight
+    sections with ## headers, specific service names, and realistic cost estimates.
+    No ```markdown wrapper. No "Thought:" prefix. Raw markdown only.
+
+  output_file: "{output_dir}/system_design.md"
+  agent: system_designer
+  context:
+    - analyze_requirements
+    - design_backend
+    - design_frontend
+
+design_data_model:
+  description: >
+    Design the complete data model for this product.
+
+    Base your schema on the actual entities implied by the requirements and
+    backend architecture. Every field must have a name, type, and constraints.
+    Do not use vague "metadata: JSON" fields without explaining their schema.
+
+    Produce a structured markdown document with these exact sections:
+
+    # Data Model — [Product Name]
+
+    ## Entities & Attributes
+    One ### subsection per entity. For each entity list every field as a table:
+    | Field | Type | Constraints | Description |
+
+    ## Relationships
+    Describe every relationship between entities: type (1:1, 1:N, M:N),
+    which table holds the FK, and any join table needed.
+
+    ## Primary & Foreign Keys
+    List all PKs (prefer UUIDs for distributed systems, explain if using int).
+    List all FKs with the referencing and referenced tables.
+
+    ## Index Strategy
+    List every index beyond the PK: the column(s), index type (B-tree, GIN,
+    partial), and the query pattern it supports.
+
+    ## Partitioning & Sharding
+    If scale demands it: describe the partitioning key and strategy. If MVP
+    scale doesn't need it, say so explicitly and describe the trigger point.
+
+    ## Audit & Soft Delete Patterns
+    How the schema handles: created_at/updated_at timestamps, soft deletes
+    (deleted_at nullable), and audit logs if compliance requires them.
+
+    OUTPUT RULES — follow exactly:
+    - Output raw markdown only. No preamble, no "Thought:", no explanation.
+    - Do NOT wrap output in a ```markdown code fence.
+    - Start directly with "# Data Model —" heading.
+    - Use ## for sections, ### for each entity, markdown tables for fields.
+    - Every entity from the requirements must appear here.
+
+  expected_output: >
+    A markdown document starting with "# Data Model —" containing all six
+    sections, with every entity as a ### subsection and every field in a table.
+    No ```markdown wrapper. No "Thought:" prefix. Raw markdown only.
+
+  output_file: "{output_dir}/data_model.md"
+  agent: data_modeller
+  context:
+    - analyze_requirements
+    - design_backend
+
+estimate_costs:
+  description: >
+    Produce a realistic cost and resource estimate for building and operating
+    this product. Base every number on the actual architecture decisions made
+    upstream — do not invent services that were not in the design.
+
+    Produce a structured markdown document with these exact sections:
+
+    # Cost & Resource Estimate — [Product Name]
+
+    ## Infrastructure Costs (Monthly at MVP Scale)
+    Table with columns: Service | Provider | Tier/Config | Est. Monthly Cost
+    Cover compute, database, cache, storage, CDN, email, and any AI APIs.
+    Provide a Total row. Give optimistic / realistic / conservative range.
+
+    ## Third-Party API Costs
+    Table: Service | Purpose | Pricing Model | Est. Monthly Cost at MVP scale.
+    Include payments (Stripe fees), auth (Auth0/Clerk), maps, SMS, etc.
+
+    ## Engineering Team Composition
+    Table: Role | Seniority | Count | Responsibility
+    Size the team to the product's complexity and MVP timeline.
+
+    ## Engineering Timeline
+    | Phase | Duration | Key Deliverables |
+    Break into: Setup & Scaffolding, Core MVP, Testing & QA, Launch Prep.
+
+    ## Total MVP Investment
+    Roll up: infra cost × timeline months + engineering cost estimate.
+    State assumptions clearly (e.g. average engineer salary/rate used).
+
+    ## Top Cost Drivers & Risks
+    Bullet list of the 3-5 biggest cost unknowns or risks that could blow
+    the budget, with a mitigation suggestion for each.
+
+    OUTPUT RULES — follow exactly:
+    - Output raw markdown only. No preamble, no "Thought:", no explanation.
+    - Do NOT wrap output in a ```markdown code fence.
+    - Start directly with "# Cost & Resource Estimate —" heading.
+    - Use ## for sections, markdown tables throughout, **bold** for totals.
+    - Every number must be tied to a specific architectural choice upstream.
+
+  expected_output: >
+    A markdown document starting with "# Cost & Resource Estimate —" containing
+    all six sections with tables, ranges, and explicit assumptions.
+    No ```markdown wrapper. No "Thought:" prefix. Raw markdown only.
+
+  output_file: "{output_dir}/cost_estimate.md"
+  agent: cost_estimator
+  context:
+    - analyze_requirements
+    - design_backend
+    - design_system
+
+plan_roadmap:
+  description: >
+    Produce a phased engineering roadmap for building this product.
+    Make hard scope decisions explicit — what is IN the MVP and what is OUT.
+    A roadmap that tries to include everything is useless.
+
+    Produce a structured markdown document with these exact sections:
+
+    # Implementation Roadmap — [Product Name]
+
+    ## MVP Scope Decision
+    Two explicit lists:
+    **IN scope for MVP:** (numbered, with one-line justification for each)
+    **OUT of scope for MVP:** (numbered, with one-line justification for each)
+
+    ## Sprint Breakdown (MVP)
+    One ### subsection per 2-week sprint. For each sprint:
+    - Sprint goal (one sentence)
+    - Backend deliverables (bullet list)
+    - Frontend deliverables (bullet list)
+    - DevOps/Infra deliverables (bullet list)
+    - Definition of done
+
+    ## Team Responsibilities
+    Table: Sprint | Backend | Frontend | DevOps | QA
+    Map each sprint to the role(s) carrying the load.
+
+    ## Technical Risks & Mitigations
+    Table: Risk | Likelihood | Impact | Mitigation
+    Cover the top 3-5 risks that could blow the timeline or architecture.
+
+    ## Post-MVP Phases
+    ### Phase 2 — [Theme]
+    ### Phase 3 — [Theme]
+    Each phase: 2-3 bullet features with business justification for the ordering.
+
+    ## Success Metrics
+    How do you know the MVP succeeded? List 3-5 measurable KPIs tied to the
+    product's core value proposition.
+
+    OUTPUT RULES — follow exactly:
+    - Output raw markdown only. No preamble, no "Thought:", no explanation.
+    - Do NOT wrap output in a ```markdown code fence.
+    - Start directly with "# Implementation Roadmap —" heading.
+    - Use ## for sections, ### for sprints and post-MVP phases, tables for
+      team responsibilities and risk register.
+
+  expected_output: >
+    A markdown document starting with "# Implementation Roadmap —" containing
+    all six sections with sprint-level detail and explicit scope decisions.
+    No ```markdown wrapper. No "Thought:" prefix. Raw markdown only.
+
+  output_file: "{output_dir}/roadmap.md"
+  agent: roadmap_planner
+  context:
+    - analyze_requirements
+    - design_backend
+    - design_frontend
+    - design_system
+    - estimate_costs
+
+generate_diagrams:
+  description: >
+    Generate exactly five Mermaid diagrams based on the architecture documents
+    produced by the upstream agents. Every node, entity, and participant must
+    reflect the ACTUAL product — no generic placeholders.
+
+    Produce these five diagrams IN THIS EXACT ORDER:
+
+    1. SYSTEM CONTEXT — graph TD
+       Show: the product, all user types, and all external systems/APIs.
+       Every external service mentioned in the backend architecture appears here.
+
+    2. COMPONENT ARCHITECTURE — graph LR
+       Show: frontend app, backend services/modules, databases, cache, queues,
+       and any background workers. Use the actual service names from the design.
+
+    3. API SEQUENCE — sequenceDiagram
+       Show the most important end-to-end user flow (e.g. user signup, core
+       transaction, primary feature). Include at least 6 steps.
+
+    4. ENTITY RELATIONSHIP — erDiagram
+       Show all core entities from the data model with their key fields and
+       all relationships between them.
+
+    5. DEPLOYMENT — graph TD
+       Show the full deployment topology: CI/CD pipeline, containers/services,
+       load balancer, cloud services, monitoring. Use actual cloud service names.
+
+    ABSOLUTE SYNTAX RULES — breaking any of these causes a render failure:
+    - Output five ```mermaid blocks DIRECTLY — no outer wrapper of any kind.
+    - Do NOT start with ```markdown — first character is the backtick of block 1.
+    - Each block: opening ```mermaid on its own line, then %% DIAGRAM NAME
+      as the first line inside, then diagram code, then closing ``` on its own line.
+    - sequenceDiagram: "participant A as Label" — NEVER "participant A[Label]".
+    - erDiagram field types: ONLY string, int, boolean, datetime, float, text.
+      NEVER UUID, Timestamp, Enum, Integer, Text — replace with string/int/datetime.
+    - No semicolons after graph direction: "graph TD" not "graph TD;".
+    - No parentheses in node labels: [Label] not (Label).
+    - Labeled edge syntax: A[X] -->|label| B[Y] — NEVER -->|label|> B.
+    - Node IDs: short ASCII (FE, API, DB, CACHE, Q). Display names in [brackets].
+    - Every block ends with closing ``` on its own line.
+    - Nothing before block 1. Nothing after the closing ``` of block 5.
+    - Never truncate the final block.
+
+  expected_output: >
+    Exactly five ```mermaid code blocks with no outer wrapper.
+    First character of output is the opening backtick of block 1.
+    Each block has %% DIAGRAM NAME as its first interior line.
+    Nothing before block 1. Nothing after the closing ``` of block 5.
+
+  output_file: "{output_dir}/diagrams.md"
+  agent: diagram_generator
+  context:
+    - analyze_requirements
+    - design_backend
+    - design_frontend
+    - design_system
+    - design_data_model
+    - estimate_costs
+    - plan_roadmap
