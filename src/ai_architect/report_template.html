@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{PRODUCT_TITLE}} — Architecture Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+      :root {
+        --bg: #0d1117;
+        --surface: #161b27;
+        --surface2: #1a2035;
+        --border: #1e2433;
+        --border-hi: #2a3550;
+        --accent: #3b82f6;
+        --accent2: #8b5cf6;
+        --green: #22c55e;
+        --amber: #f59e0b;
+        --text: #cbd5e1;
+        --text-hi: #f1f5f9;
+        --text-dim: #475569;
+        --mono: "JetBrains Mono", monospace;
+        --sans: "Inter", sans-serif;
+        --sidebar-w: 260px;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* ── Sidebar ── */
+      #sidebar {
+        width: var(--sidebar-w);
+        min-height: 100vh;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
+        z-index: 100;
+      }
+
+      .sidebar-header {
+        padding: 1.5rem 1.25rem 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .sidebar-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+      }
+      .sidebar-logo span {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--text-hi);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .sidebar-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-hi);
+        line-height: 1.4;
+      }
+      .sidebar-id {
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        color: var(--text-dim);
+        margin-top: 0.3rem;
+        letter-spacing: 0.04em;
+      }
+
+      .sidebar-nav {
+        padding: 0.75rem 0;
+        flex: 1;
+      }
+      .nav-section {
+        padding: 0.5rem 1.25rem 0.25rem;
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.5rem 1.25rem;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        cursor: pointer;
+        transition: all 0.15s;
+        border-left: 2px solid transparent;
+        text-decoration: none;
+      }
+      .nav-item:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .nav-item.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+        background: rgba(59, 130, 246, 0.06);
+      }
+      .nav-icon {
+        font-size: 0.85rem;
+        opacity: 0.7;
+      }
+      .nav-badge {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 100px;
+        background: var(--surface2);
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+      }
+
+      .sidebar-footer {
+        padding: 1rem 1.25rem;
+        border-top: 1px solid var(--border);
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        color: var(--text-dim);
+      }
+
+      /* ── Main content ── */
+      #main {
+        margin-left: var(--sidebar-w);
+        flex: 1;
+        padding: 2.5rem 3rem;
+        max-width: calc(100vw - var(--sidebar-w));
+      }
+
+      .section {
+        display: none;
+        max-width: 860px;
+        animation: fadein 0.2s ease;
+      }
+      .section.active {
+        display: block;
+      }
+      @keyframes fadein {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .section-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        background: var(--surface);
+        border: 1px solid var(--border-hi);
+      }
+      .section-header h1 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-hi);
+      }
+      .section-header p {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        margin-top: 0.1rem;
+      }
+
+      /* ── Markdown content ── */
+      .content h1 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-hi);
+        margin: 1.5rem 0 0.75rem;
+      }
+      .content h2 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-hi);
+        margin: 1.3rem 0 0.6rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .content h3 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text);
+        margin: 1rem 0 0.4rem;
+      }
+      .content h4 {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dim);
+        margin: 0.8rem 0 0.3rem;
+      }
+      .content p {
+        font-size: 0.875rem;
+        line-height: 1.75;
+        color: var(--text);
+        margin-bottom: 0.75rem;
+      }
+      .content ul,
+      .content ol {
+        padding-left: 1.4rem;
+        margin-bottom: 0.75rem;
+      }
+      .content li {
+        font-size: 0.875rem;
+        line-height: 1.7;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+      }
+      .content strong {
+        color: var(--text-hi);
+        font-weight: 600;
+      }
+      .content em {
+        color: #94a3b8;
+      }
+      .content hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 1.5rem 0;
+      }
+      .content blockquote {
+        border-left: 3px solid var(--accent);
+        padding: 0.5rem 1rem;
+        background: rgba(59, 130, 246, 0.05);
+        border-radius: 0 6px 6px 0;
+        margin: 0.75rem 0;
+      }
+      .content blockquote p {
+        color: #94a3b8;
+        margin: 0;
+      }
+      .content code {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        background: #0d1117;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 0.1rem 0.4rem;
+        color: #7dd3fc;
+      }
+      .content pre {
+        background: #0d1117;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        overflow-x: auto;
+        margin: 0.75rem 0;
+      }
+      .content pre code {
+        background: none;
+        border: none;
+        padding: 0;
+        font-size: 0.8rem;
+        color: #94a3b8;
+        line-height: 1.7;
+      }
+      .content table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+        margin: 0.75rem 0;
+      }
+      .content th {
+        background: var(--surface2);
+        color: var(--text-hi);
+        font-weight: 600;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        border: 1px solid var(--border);
+      }
+      .content td {
+        padding: 0.45rem 0.75rem;
+        border: 1px solid var(--border);
+        color: var(--text);
+      }
+      .content tr:nth-child(even) td {
+        background: rgba(255, 255, 255, 0.015);
+      }
+
+      /* ── Mermaid diagrams ── */
+      .diagrams-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      .diagram-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .diagram-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1rem;
+        background: var(--surface2);
+        border-bottom: 1px solid var(--border);
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        letter-spacing: 0.05em;
+      }
+      .diagram-card-header .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+      .diagram-card-body {
+        padding: 1.5rem;
+        overflow-x: auto;
+        display: flex;
+        justify-content: center;
+      }
+      .diagram-card-body svg {
+        max-width: 100%;
+      }
+      .diagram-error {
+        padding: 1rem;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        color: #f87171;
+        background: rgba(248, 113, 113, 0.05);
+        border-radius: 6px;
+      }
+
+      /* ── Overview cards ── */
+      .overview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+      .overview-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+      }
+      .overview-card:hover {
+        border-color: var(--accent);
+        background: rgba(59, 130, 246, 0.04);
+        transform: translateY(-1px);
+      }
+      .overview-card-icon {
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+      }
+      .overview-card-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-hi);
+        margin-bottom: 0.2rem;
+      }
+      .overview-card-desc {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        line-height: 1.5;
+      }
+
+      .meta-row {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+        padding: 1rem 1.25rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+      .meta-label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-dim);
+        font-family: var(--mono);
+      }
+      .meta-value {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-hi);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-dot"></div>
+          <span>AI Architect</span>
+        </div>
+        <div class="sidebar-title">{{PRODUCT_TITLE}}</div>
+        <div class="sidebar-id">{{TASK_ID}}</div>
+      </div>
+
+      <div class="sidebar-nav">
+        <div class="nav-section">Report</div>
+        <a class="nav-item active" onclick="showSection('overview', this)">
+          <span class="nav-icon">🏠</span> Overview
+        </a>
+
+        <div class="nav-section">Documents</div>
+        <a class="nav-item" onclick="showSection('requirements', this)">
+          <span class="nav-icon">📋</span> Requirements
+          <span class="nav-badge">MD</span>
+        </a>
+        <a class="nav-item" onclick="showSection('backend', this)">
+          <span class="nav-icon">⚙️</span> Backend Architecture
+          <span class="nav-badge">MD</span>
+        </a>
+        <a class="nav-item" onclick="showSection('frontend', this)">
+          <span class="nav-icon">🖥️</span> Frontend Architecture
+          <span class="nav-badge">MD</span>
+        </a>
+        <a class="nav-item" onclick="showSection('system', this)">
+          <span class="nav-icon">🌐</span> System Design
+          <span class="nav-badge">MD</span>
+        </a>
+        <a class="nav-item" onclick="showSection('data_model', this)">
+          <span class="nav-icon">🗄️</span> Data Model
+          <span class="nav-badge">MD</span>
+        </a>
+        <a class="nav-item" onclick="showSection('cost_estimate', this)">
+          <span class="nav-icon">💰</span> Cost Estimate
+          <span class="nav-badge">MD</span>
+        </a>
+        <a class="nav-item" onclick="showSection('roadmap', this)">
+          <span class="nav-icon">🗺️</span> Roadmap
+          <span class="nav-badge">MD</span>
+        </a>
+
+        <div class="nav-section">Diagrams</div>
+        <a class="nav-item" onclick="showSection('diagrams', this)">
+          <span class="nav-icon">📊</span> All Diagrams
+          <span class="nav-badge">{{DIAGRAMS_LEN}}</span>
+        </a>
+      </div>
+
+      <div class="sidebar-footer">
+        Generated {{GENERATED_AT}}<br />
+        CrewAI · {{PROVIDER}} · {{MODEL_NAME}}
+      </div>
+    </nav>
+
+    <!-- Main -->
+    <main id="main">
+      <!-- OVERVIEW -->
+      <section id="section-overview" class="section active">
+        <div class="section-header">
+          <div>
+            <h1>Overview</h1>
+            <p>Architecture report for your product idea</p>
+          </div>
+        </div>
+
+        <div class="meta-row">
+          <div class="meta-item">
+            <span class="meta-label">Task ID</span>
+            <span class="meta-value" style="font-family: var(--mono)"
+              >{{TASK_ID}}</span
+            >
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Generated</span>
+            <span class="meta-value">{{GENERATED_AT}}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Agents</span>
+            <span class="meta-value">{{AGENTS_LEN}}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Documents</span>
+            <span class="meta-value">7 sections</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Diagrams</span>
+            <span class="meta-value">{{DIAGRAMS_LEN}} charts</span>
+          </div>
+        </div>
+
+        <div
+          style="
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+          "
+        >
+          <div
+            style="
+              font-size: 0.65rem;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              color: var(--text-dim);
+              font-family: var(--mono);
+              margin-bottom: 0.5rem;
+            "
+          >
+            Product Idea
+          </div>
+          <div
+            style="font-size: 0.95rem; color: var(--text-hi); line-height: 1.6"
+          >
+            {{PRODUCT_IDEA}}
+          </div>
+        </div>
+
+        <div class="overview-grid">
+          <a
+            class="overview-card"
+            onclick="
+              showSection(
+                'requirements',
+                document.querySelector('[onclick*=requirements]'),
+              )
+            "
+          >
+            <div class="overview-card-icon">📋</div>
+            <div class="overview-card-title">Requirements</div>
+            <div class="overview-card-desc">
+              Product summary, user types, core features, MVP scope
+            </div>
+          </a>
+          <a
+            class="overview-card"
+            onclick="
+              showSection(
+                'backend',
+                document.querySelector('[onclick*=backend]'),
+              )
+            "
+          >
+            <div class="overview-card-icon">⚙️</div>
+            <div class="overview-card-title">Backend Architecture</div>
+            <div class="overview-card-desc">
+              Framework, API design, database, auth, caching
+            </div>
+          </a>
+          <a
+            class="overview-card"
+            onclick="
+              showSection(
+                'frontend',
+                document.querySelector('[onclick*=frontend]'),
+              )
+            "
+          >
+            <div class="overview-card-icon">🖥️</div>
+            <div class="overview-card-title">Frontend Architecture</div>
+            <div class="overview-card-desc">
+              Framework, state management, routing, component structure
+            </div>
+          </a>
+          <a
+            class="overview-card"
+            onclick="
+              showSection('system', document.querySelector('[onclick*=system]'))
+            "
+          >
+            <div class="overview-card-icon">🌐</div>
+            <div class="overview-card-title">System Design</div>
+            <div class="overview-card-desc">
+              Infrastructure, deployment, observability, DR strategy
+            </div>
+          </a>
+          <a
+            class="overview-card"
+            onclick="
+              showSection(
+                'data_model',
+                document.querySelector('[onclick*=data_model]'),
+              )
+            "
+          >
+            <div class="overview-card-icon">🗄️</div>
+            <div class="overview-card-title">Data Model</div>
+            <div class="overview-card-desc">
+              Entities, relationships, schema, indexing strategy
+            </div>
+          </a>
+          <a
+            class="overview-card"
+            onclick="
+              showSection(
+                'cost_estimate',
+                document.querySelector('[onclick*=cost_estimate]'),
+              )
+            "
+          >
+            <div class="overview-card-icon">💰</div>
+            <div class="overview-card-title">Cost Estimate</div>
+            <div class="overview-card-desc">
+              Infra costs, team composition, timeline and budget
+            </div>
+          </a>
+          <a
+            class="overview-card"
+            onclick="
+              showSection(
+                'roadmap',
+                document.querySelector('[onclick*=roadmap]'),
+              )
+            "
+          >
+            <div class="overview-card-icon">🗺️</div>
+            <div class="overview-card-title">Roadmap</div>
+            <div class="overview-card-desc">
+              MVP scope, sprint plan, risks and post-MVP phases
+            </div>
+          </a>
+          <a
+            class="overview-card"
+            onclick="
+              showSection(
+                'diagrams',
+                document.querySelector('[onclick*=diagrams]'),
+              )
+            "
+          >
+            <div class="overview-card-icon">📊</div>
+            <div class="overview-card-title">Diagrams</div>
+            <div class="overview-card-desc">
+              System context, components, sequence, ER, deployment
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- REQUIREMENTS -->
+      <section id="section-requirements" class="section">
+        <div class="section-header">
+          <div class="section-icon">📋</div>
+          <div>
+            <h1>Requirements</h1>
+            <p>Product summary, user types, features and MVP scope</p>
+          </div>
+        </div>
+        <div class="content" id="content-requirements"></div>
+      </section>
+
+      <!-- BACKEND -->
+      <section id="section-backend" class="section">
+        <div class="section-header">
+          <div class="section-icon">⚙️</div>
+          <div>
+            <h1>Backend Architecture</h1>
+            <p>Framework, API design, database, auth and caching strategy</p>
+          </div>
+        </div>
+        <div class="content" id="content-backend"></div>
+      </section>
+
+      <!-- FRONTEND -->
+      <section id="section-frontend" class="section">
+        <div class="section-header">
+          <div class="section-icon">🖥️</div>
+          <div>
+            <h1>Frontend Architecture</h1>
+            <p>Framework, state management, routing and deployment</p>
+          </div>
+        </div>
+        <div class="content" id="content-frontend"></div>
+      </section>
+
+      <!-- SYSTEM -->
+      <section id="section-system" class="section">
+        <div class="section-header">
+          <div class="section-icon">🌐</div>
+          <div>
+            <h1>System Design</h1>
+            <p>
+              Infrastructure, deployment pipeline, observability and security
+            </p>
+          </div>
+        </div>
+        <div class="content" id="content-system"></div>
+      </section>
+
+      <!-- DATA MODEL -->
+      <section id="section-data_model" class="section">
+        <div class="section-header">
+          <div class="section-icon">🗄️</div>
+          <div>
+            <h1>Data Model</h1>
+            <p>Entities, relationships, schema decisions and indexing</p>
+          </div>
+        </div>
+        <div class="content" id="content-data_model"></div>
+      </section>
+
+      <!-- COST ESTIMATE -->
+      <section id="section-cost_estimate" class="section">
+        <div class="section-header">
+          <div class="section-icon">💰</div>
+          <div>
+            <h1>Cost Estimate</h1>
+            <p>
+              Infrastructure costs, team composition, timeline and total
+              investment
+            </p>
+          </div>
+        </div>
+        <div class="content" id="content-cost_estimate"></div>
+      </section>
+
+      <!-- ROADMAP -->
+      <section id="section-roadmap" class="section">
+        <div class="section-header">
+          <div class="section-icon">🗺️</div>
+          <div>
+            <h1>Implementation Roadmap</h1>
+            <p>
+              MVP scope, sprint breakdown, team responsibilities and post-MVP
+              phases
+            </p>
+          </div>
+        </div>
+        <div class="content" id="content-roadmap"></div>
+      </section>
+
+      <!-- DIAGRAMS -->
+      <section id="section-diagrams" class="section">
+        <div class="section-header">
+          <div class="section-icon">📊</div>
+          <div>
+            <h1>Diagrams</h1>
+            <p>System context, components, sequence, ER and deployment</p>
+          </div>
+        </div>
+        <div class="diagrams-grid" id="diagrams-container"></div>
+      </section>
+    </main>
+
+    <script>
+        // Navigation
+        function showSection(id, navEl) {
+          document
+            .querySelectorAll(".section")
+            .forEach((s) => s.classList.remove("active"));
+          document
+            .querySelectorAll(".nav-item")
+            .forEach((n) => n.classList.remove("active"));
+          const sec = document.getElementById("section-" + id);
+          if (sec) sec.classList.add("active");
+          if (navEl) navEl.classList.add("active");
+        }
+
+        // Markdown rendering
+        const CONTENT = {{CONTENT_JSON}};
+
+        marked.setOptions({ breaks: true, gfm: true });
+
+        ["requirements", "backend", "frontend", "system", "data_model", "cost_estimate", "roadmap"].forEach(
+          (key) => {
+            const el = document.getElementById("content-" + key);
+            if (el && CONTENT[key]) {
+              el.innerHTML = marked.parse(CONTENT[key]);
+            } else if (el) {
+              el.innerHTML =
+                '<p style="color:var(--text-dim);font-style:italic">No content generated for this section.</p>';
+            }
+          },
+        );
+
+        // Mermaid diagrams
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "dark",
+          themeVariables: {
+            background: "#0d1117",
+            primaryColor: "#1e2d4a",
+            primaryTextColor: "#e2e8f0",
+            primaryBorderColor: "#2a3550",
+            lineColor: "#475569",
+            secondaryColor: "#161b27",
+            tertiaryColor: "#1a2035",
+            edgeLabelBackground: "#161b27",
+            clusterBkg: "#1a2035",
+            titleColor: "#f1f5f9",
+          },
+          flowchart: { curve: "basis", htmlLabels: true },
+          sequence: { useMaxWidth: true },
+          er: { useMaxWidth: true },
+        });
+
+        const DIAGRAM_NAMES = {
+          "SYSTEM CONTEXT": { label: "System Context Diagram", icon: "🌍" },
+          COMPONENT: { label: "Component Architecture", icon: "🧩" },
+          "API SEQUENCE": { label: "API Sequence Diagram", icon: "🔄" },
+          ENTITY: { label: "Entity Relationship Diagram", icon: "🗃️" },
+          DEPLOYMENT: { label: "Deployment Diagram", icon: "🚀" },
+        };
+
+        function getDiagramMeta(comment) {
+          const upper = comment.toUpperCase();
+          for (const [key, val] of Object.entries(DIAGRAM_NAMES)) {
+            if (upper.includes(key)) return val;
+          }
+          return { label: comment.trim(), icon: "📊" };
+        }
+
+        function sanitizeMermaid(code) {
+          return (
+            code
+              .replace(/\r/g, "")
+
+              // Fix: -->|label|>
+              .replace(/(-->|==>|-.->)\s*\|\s*([^|\n]+?)\s*\|\s*>/g, "$1|$2|")
+
+              // Fix accidental extra >
+              .replace(/\|\s*>\s*([A-Za-z][A-Za-z0-9_\[\]() ]*)/g, "| $1")
+
+              // graph TD;
+              .replace(/(graph\s+(TD|LR|RL|TB));/g, "graph $2")
+
+              // Remove duplicate spaces at line ends
+              .replace(/[ \t]+$/gm, "")
+
+              // Remove broken reverse ER relationship
+              .replace(/PAYMENT\s+\|\|--\|\{\s+BOOKING\s+:.*/g, "")
+              .replace(/\[([^\]]*?)\((.*?)\)([^\]]*?)\]/g, '["$1-$2$3"]')
+              .replace(/\[([^\]]+)\]/g, (_, text) => `["${text.trim()}"]`)
+
+              .trim()
+          );
+        }
+
+        async function renderDiagrams() {
+          const raw = CONTENT["diagrams"] || "";
+
+          const container = document.getElementById("diagrams-container");
+
+          container.innerHTML = "";
+
+          if (!raw.trim()) {
+            container.innerHTML =
+              '<p style="color:var(--text-dim)">No diagrams generated.</p>';
+            return;
+          }
+
+          // More reliable than regex
+          const blocks = raw
+            .split("```mermaid")
+            .slice(1)
+            .map((block) => block.split("```")[0].trim())
+            .filter(Boolean);
+
+          if (!blocks.length) {
+            container.innerHTML =
+              '<p style="color:var(--text-dim)">No mermaid blocks found.</p>';
+            return;
+          }
+
+          for (const [idx, block] of blocks.entries()) {
+            let code = sanitizeMermaid(block);
+
+            console.log("RAW DIAGRAM:\n", block);
+
+            console.log("SANITIZED:\n", code);
+
+            const commentMatch = code.match(/^\s*%%\s*(.+)$/m);
+
+            const meta = commentMatch
+              ? getDiagramMeta(commentMatch[1])
+              : {
+                  label: `Diagram ${idx + 1}`,
+                  icon: "📊",
+                };
+
+            const card = document.createElement("div");
+
+            card.className = "diagram-card";
+
+            card.innerHTML = `
+        <div class="diagram-card-header">
+          <div class="dot"></div>
+          ${meta.icon}&nbsp;
+          ${meta.label}
+        </div>
+
+        <div
+          class="diagram-card-body"
+          id="diagram-body-${idx}"
+        >
+          <div
+            style="
+              color:var(--text-dim);
+              font-size:0.8rem
+            "
+          >
+            Rendering...
+          </div>
+        </div>
+      `;
+
+            container.appendChild(card);
+
+            try {
+              if (
+                !code.includes("graph") &&
+                !code.includes("sequenceDiagram") &&
+                !code.includes("erDiagram")
+              ) {
+                throw new Error("Diagram type missing");
+              }
+
+              const renderId = `mermaid-${idx}-${Date.now()}`;
+
+              const { svg } = await mermaid.render(renderId, code);
+
+              document.getElementById(`diagram-body-${idx}`).innerHTML = svg;
+            } catch (e) {
+              document.getElementById(`diagram-body-${idx}`).innerHTML = `
+          <div class="diagram-error">
+
+            ⚠ Render error:
+            ${e.message}
+
+            <br><br>
+
+            <pre
+              style="
+                font-size:0.72rem;
+                white-space:pre-wrap;
+                color:#94a3b8;
+              "
+            >${code}</pre>
+
+          </div>
+        `;
+
+              console.error("MERMAID ERROR", e, code);
+            }
+          }
+        }
+
+        renderDiagrams();
+    </script>
+  </body>
+</html>
